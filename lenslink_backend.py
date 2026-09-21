@@ -342,6 +342,11 @@ def view_request(obs, request):
         # cannot redirect a long-lived session onto another source.
         scene, item, _ = obs.camera_item()
         transform = obs.transform(scene, item)
+        dimensions = ('sourceWidth', 'sourceHeight')
+        if not all(transform.get(name, 0) > 0 for name in dimensions):
+            if command != 'frame' or args:
+                raise ObsError('LensLink video is still starting')
+            return result
         if command == 'pan':
             if len(args) != 4: raise ObsError('Pan requires four values')
             crop = drag_crop(transform, *args)

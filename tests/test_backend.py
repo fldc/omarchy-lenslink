@@ -194,12 +194,13 @@ class Framing(unittest.TestCase):
 
     def test_malformed_obs_orientation_is_rejected(self):
         for key, value in [('rotation', '180'), ('positionX', True),
-                           ('width', 0), ('alignment', 5.5)]:
+                           ('width', -1), ('alignment', 5.5)]:
             with self.subTest(key=key), self.assertRaises(ObsError):
                 transform_value({key:value})
 
     def test_disabled_obs_bounds_are_accepted(self):
-        transform_value({'boundsWidth': 0.0, 'boundsHeight': 0.0})
+        transform_value({'width': 0.0, 'height': 0.0,
+                         'boundsWidth': 0.0, 'boundsHeight': 0.0})
 
 class AdvancedControls(unittest.TestCase):
     run_control = Controls.run_control
@@ -236,6 +237,14 @@ class ViewConnection(unittest.TestCase):
         obs=Mock();obs.request.return_value={'currentProgramSceneName':'Anker'}
         with self.assertRaises(ObsError):b.view_request(obs,{'command':'zoom','arguments':[3],'preview':False})
         obs.set_crop.assert_not_called()
+    def test_inactive_source_waits_without_preview_error(self):
+        obs=Mock()
+        obs.request.return_value={'currentProgramSceneName':b.SCENE}
+        obs.camera_item.return_value=(b.SCENE,1,b.SOURCE)
+        obs.transform.return_value=dict(sourceWidth=0,sourceHeight=0,width=0,height=0)
+        result=b.view_request(obs,{'command':'frame','arguments':[],'preview':True})
+        self.assertEqual(result,{'scene':b.SCENE})
+        self.assertEqual(obs.request.call_count,1)
     def test_rejects_unknown_or_unbounded_arguments(self):
         for request in [{'command':'shell','arguments':[],'preview':False},{'command':'pan','arguments':[1]*5,'preview':False}]:
             with self.assertRaises(ObsError):b.view_request(Mock(),request)

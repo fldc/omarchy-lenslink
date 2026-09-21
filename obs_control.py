@@ -58,7 +58,7 @@ def transform_value(value):
         number(value.get(name, 0))
     for name in ("width", "height"):
         if name in value:
-            number(value[name], 1, 32768)
+            number(value[name], 0, 32768)
     for name in ("boundsWidth", "boundsHeight"):
         if name in value:
             number(value[name], 0, 32768)
