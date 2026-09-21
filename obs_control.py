@@ -301,15 +301,18 @@ class Obs:
         )
 
     def set_orientation(self, scene: str, item_id: int, transform: dict) -> None:
-        expected = {"rotation", "positionX", "positionY", "boundsWidth", "boundsHeight"}
+        expected = {"rotation", "positionX", "positionY", "boundsWidth", "boundsHeight", "boundsType"}
         if type(transform) is not dict or set(transform) != expected:
             raise ObsError("invalid OBS orientation transform")
         if transform["rotation"] not in (0, 90, 180, 270):
             raise ObsError("invalid OBS orientation rotation")
+        if transform["boundsType"] not in ("OBS_BOUNDS_NONE", "OBS_BOUNDS_SCALE_INNER"):
+            raise ObsError("invalid OBS orientation bounds")
         number(transform["positionX"], -32768, 32768)
         number(transform["positionY"], -32768, 32768)
-        number(transform["boundsWidth"], 1, 32768)
-        number(transform["boundsHeight"], 1, 32768)
+        minimum = 0 if transform["boundsType"] == "OBS_BOUNDS_NONE" else 1
+        number(transform["boundsWidth"], minimum, 32768)
+        number(transform["boundsHeight"], minimum, 32768)
         self.request(
             "SetSceneItemTransform",
             {

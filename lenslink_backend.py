@@ -174,10 +174,15 @@ def orientation_update(transform, target=None):
         raise ObsError('Choose a supported screen orientation')
     if numeric(transform.get('alignment'), 0, 15) != 5:
         raise ObsError('Use top-left source alignment in OBS before rotating')
-    if transform.get('boundsType') != 'OBS_BOUNDS_SCALE_INNER':
-        raise ObsError('Use Scale to inner bounds in OBS before rotating')
-    bound_w = numeric(transform.get('boundsWidth'), 1, 32768)
-    bound_h = numeric(transform.get('boundsHeight'), 1, 32768)
+    bounds_type = transform.get('boundsType')
+    if bounds_type == 'OBS_BOUNDS_SCALE_INNER':
+        bound_w = numeric(transform.get('boundsWidth'), 1, 32768)
+        bound_h = numeric(transform.get('boundsHeight'), 1, 32768)
+    elif bounds_type == 'OBS_BOUNDS_NONE':
+        bound_w = numeric(transform.get('width'), 1, 32768)
+        bound_h = numeric(transform.get('height'), 1, 32768)
+    else:
+        raise ObsError('Use no bounds or Scale to inner bounds in OBS before rotating')
     canvas_w, canvas_h = max(bound_w, bound_h), min(bound_w, bound_h)
     target_w, target_h = (canvas_h, canvas_w) if target in (90, 270) else (canvas_w, canvas_h)
     # OBS applies crop and inner-bounds scaling before rotation. These four
@@ -187,11 +192,13 @@ def orientation_update(transform, target=None):
                  180:(canvas_w, canvas_h), 270:(0, canvas_h)}
     x, y = positions[target]
     return {'rotation': target, 'positionX': x, 'positionY': y,
-            'boundsWidth': target_w, 'boundsHeight': target_h}
+            'boundsWidth': target_w, 'boundsHeight': target_h,
+            'boundsType': 'OBS_BOUNDS_SCALE_INNER'}
 
 
 def orientation_confirmed(actual, expected):
-    return all(abs(actual.get(key, float('inf')) - value)
+    return all(actual.get(key) == value if key == 'boundsType' else
+               abs(actual.get(key, float('inf')) - value)
                < (.51 if key in ('positionX','positionY') else .01)
                for key, value in expected.items())
 
@@ -434,7 +441,7 @@ def obs_action(command, values):
                 update = orientation_update(original, values[0])
             else:
                 update = orientation_update(original)
-            orientation_keys = ('rotation','positionX','positionY','boundsWidth','boundsHeight')
+            orientation_keys = ('rotation','positionX','positionY','boundsWidth','boundsHeight','boundsType')
             original_orientation = {key: original.get(key, 0) for key in orientation_keys}
             original_crop = {key: original.get(key, 0) for key in ('cropLeft','cropRight','cropTop','cropBottom')}
             obs.set_orientation(scene, item, update)

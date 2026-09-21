@@ -125,11 +125,13 @@ class Framing(unittest.TestCase):
                          boundsType='OBS_BOUNDS_SCALE_INNER')
         self.assertEqual(b.orientation_update(transform),
                          {'rotation':180, 'positionX':1920, 'positionY':1080,
-                          'boundsWidth':1920, 'boundsHeight':1080})
+                          'boundsWidth':1920, 'boundsHeight':1080,
+                          'boundsType':'OBS_BOUNDS_SCALE_INNER'})
         transform.update(rotation=180, positionX=1920, positionY=1080)
         self.assertEqual(b.orientation_update(transform),
                          {'rotation':0, 'positionX':0, 'positionY':0,
-                          'boundsWidth':1920, 'boundsHeight':1080})
+                          'boundsWidth':1920, 'boundsHeight':1080,
+                          'boundsType':'OBS_BOUNDS_SCALE_INNER'})
 
     def test_portrait_is_centered_and_swaps_bounds(self):
         transform = dict(self.frame, rotation=0, alignment=5, positionX=0,
@@ -138,12 +140,14 @@ class Framing(unittest.TestCase):
                          boundsType='OBS_BOUNDS_SCALE_INNER')
         self.assertEqual(b.orientation_update(transform, 90),
                          {'rotation':90, 'positionX':1920, 'positionY':0,
-                          'boundsWidth':1080, 'boundsHeight':1920})
+                          'boundsWidth':1080, 'boundsHeight':1920,
+                          'boundsType':'OBS_BOUNDS_SCALE_INNER'})
         transform.update(rotation=90, positionX=1920, positionY=0,
                          boundsWidth=1080, boundsHeight=1920)
         self.assertEqual(b.orientation_update(transform, 270),
                          {'rotation':270, 'positionX':0, 'positionY':1080,
-                          'boundsWidth':1080, 'boundsHeight':1920})
+                          'boundsWidth':1080, 'boundsHeight':1920,
+                          'boundsType':'OBS_BOUNDS_SCALE_INNER'})
         expected = b.orientation_update(dict(transform, rotation=0,
                                               boundsWidth=1920, boundsHeight=1080), 90)
         self.assertTrue(b.orientation_confirmed(dict(expected, positionX=1920.25), expected))
@@ -167,7 +171,8 @@ class Framing(unittest.TestCase):
                         boundsWidth=1920, boundsHeight=1080,
                         boundsType='OBS_BOUNDS_SCALE_INNER')
         update = {'rotation':180, 'positionX':1920, 'positionY':1080,
-                  'boundsWidth':1920, 'boundsHeight':1080}
+                  'boundsWidth':1920, 'boundsHeight':1080,
+                  'boundsType':'OBS_BOUNDS_SCALE_INNER'}
         actual = dict(original, **update)
         obs = Mock()
         obs.camera_item.return_value = (b.SCENE, 1, b.SOURCE)
@@ -176,6 +181,16 @@ class Framing(unittest.TestCase):
             result = b.obs_action('rotate_180', [])
         obs.set_orientation.assert_called_once_with(b.SCENE, 1, update)
         self.assertIn('flipped', result['message'])
+
+    def test_orientation_initializes_disabled_bounds(self):
+        transform = dict(self.frame, rotation=0, alignment=5, positionX=0,
+                         positionY=0, width=1920, height=1080,
+                         boundsWidth=0, boundsHeight=0,
+                         boundsType='OBS_BOUNDS_NONE')
+        self.assertEqual(b.orientation_update(transform, 90),
+                         {'rotation':90, 'positionX':1920, 'positionY':0,
+                          'boundsWidth':1080, 'boundsHeight':1920,
+                          'boundsType':'OBS_BOUNDS_SCALE_INNER'})
 
     def test_malformed_obs_orientation_is_rejected(self):
         for key, value in [('rotation', '180'), ('positionX', True),
