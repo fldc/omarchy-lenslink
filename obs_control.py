@@ -56,9 +56,12 @@ def transform_value(value):
     value = object_value(value)
     for name in ("cropLeft", "cropRight", "cropTop", "cropBottom", "sourceWidth", "sourceHeight"):
         number(value.get(name, 0))
-    for name in ("width", "height", "boundsWidth", "boundsHeight"):
+    for name in ("width", "height"):
         if name in value:
             number(value[name], 1, 32768)
+    for name in ("boundsWidth", "boundsHeight"):
+        if name in value:
+            number(value[name], 0, 32768)
     for name in ("positionX", "positionY"):
         if name in value:
             number(value[name], -32768, 32768)

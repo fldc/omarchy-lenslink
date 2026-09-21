@@ -183,6 +183,9 @@ class Framing(unittest.TestCase):
             with self.subTest(key=key), self.assertRaises(ObsError):
                 transform_value({key:value})
 
+    def test_disabled_obs_bounds_are_accepted(self):
+        transform_value({'boundsWidth': 0.0, 'boundsHeight': 0.0})
+
 class AdvancedControls(unittest.TestCase):
     run_control = Controls.run_control
     def setUp(self):
